@@ -1,0 +1,14 @@
+Huobz by badrpk
+
+AI edge & coder ecosystem
+
+Features:
+• Sign up / Sign in with email
+• OTP for first-time verification only
+• Existing users login without OTP
+• Google & Facebook login (no OTP)
+• Connected to OpenAI-compat API
+• GCP API key integrated for Google services
+
+Privacy: Auth tokens stored on device only for session use.
+Support: badrpk@gmail.com

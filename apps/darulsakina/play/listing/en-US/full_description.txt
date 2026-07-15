@@ -1,0 +1,14 @@
+Darul Sakina by badrpk
+
+Community & faith portal
+
+Features:
+• Sign up / Sign in with email
+• OTP for first-time verification only
+• Existing users login without OTP
+• Google & Facebook login (no OTP)
+• Connected to Community API
+• GCP API key integrated for Google services
+
+Privacy: Auth tokens stored on device only for session use.
+Support: badrpk@gmail.com

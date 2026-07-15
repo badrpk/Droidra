@@ -1,0 +1,14 @@
+Xerus by badrpk
+
+Short-form video social
+
+Features:
+• Sign up / Sign in with email
+• OTP for first-time verification only
+• Existing users login without OTP
+• Google & Facebook login (no OTP)
+• Connected to Social video API
+• GCP API key integrated for Google services
+
+Privacy: Auth tokens stored on device only for session use.
+Support: badrpk@gmail.com

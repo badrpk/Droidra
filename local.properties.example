@@ -1,0 +1,8 @@
+## Copy to local.properties (gitignored) and fill values
+## GCP API key from your email / Google Cloud Console
+sdk.dir=/path/to/Android/Sdk
+GCP_API_KEY=YOUR_GCP_API_KEY_HERE
+GOOGLE_API_KEY=YOUR_GCP_API_KEY_HERE
+MAPS_API_KEY=YOUR_GCP_API_KEY_HERE
+# Optional API hosts (default 10.0.2.2 = Android emulator localhost)
+API_HOST=10.0.2.2
