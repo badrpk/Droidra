@@ -11,16 +11,23 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0.0"
-        val props = rootProject.file("local.properties")
-        fun prop(k: String, d: String = ""): String {
-            if (!props.exists()) return d
-            return props.readLines().firstOrNull { it.trim().startsWith("$k=") }?.substringAfter("=")?.trim() ?: d
+        val propsFile = rootProject.file("local.properties")
+        fun prop(key: String, default: String = ""): String {
+            if (!propsFile.exists()) return default
+            val prefix = key + "="
+            return propsFile.readLines()
+                .map { it.trim() }
+                .firstOrNull { it.startsWith(prefix) }
+                ?.removePrefix(prefix)
+                ?.trim()
+                ?: default
         }
         val host = prop("API_HOST", "10.0.2.2")
-        val base = "http://$host:8799"
-        buildConfigField("String", "API_BASE", "\"$base\"")
+        val base = "http://" + host + ":8799"
+        val gcp = prop("GCP_API_KEY", prop("GOOGLE_API_KEY", ""))
+        buildConfigField("String", "API_BASE", "\"" + base + "\"")
         buildConfigField("String", "APP_NAME", "\"Sophyane\"")
-        buildConfigField("String", "GCP_API_KEY", "\"${prop("GCP_API_KEY", prop("GOOGLE_API_KEY"))}\"")
+        buildConfigField("String", "GCP_API_KEY", "\"" + gcp.replace("\"", "") + "\"")
         resValue("string", "app_name", "Sophyane")
     }
     signingConfigs {

@@ -16,9 +16,5 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- GCP / Google Maps meta (optional) -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="${{GCP_API_KEY}}" />
     </application>
 </manifest>

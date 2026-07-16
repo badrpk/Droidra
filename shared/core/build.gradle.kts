@@ -9,14 +9,18 @@ android {
         minSdk = 26
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
-        val props = rootProject.file("local.properties")
-        val gcp = if (props.exists()) {
-            props.readLines().mapNotNull {
-                val t = it.trim()
-                if (t.startsWith("GCP_API_KEY=") || t.startsWith("GOOGLE_API_KEY=")) t.substringAfter("=") else null
-            }.firstOrNull() ?: ""
+        val propsFile = rootProject.file("local.properties")
+        val gcp = if (propsFile.exists()) {
+            propsFile.readLines().mapNotNull { line ->
+                val t = line.trim()
+                when {
+                    t.startsWith("GCP_API_KEY=") -> t.removePrefix("GCP_API_KEY=")
+                    t.startsWith("GOOGLE_API_KEY=") -> t.removePrefix("GOOGLE_API_KEY=")
+                    else -> null
+                }
+            }.firstOrNull().orEmpty()
         } else ""
-        buildConfigField("String", "GCP_API_KEY", ""$gcp"")
+        buildConfigField("String", "GCP_API_KEY", "\"" + gcp.replace("\"", "") + "\"")
     }
     buildFeatures { buildConfig = true }
     compileOptions {
@@ -29,5 +33,4 @@ dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("org.json:json:20231013")
 }
