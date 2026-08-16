@@ -1,0 +1,34 @@
+name: Droidra app registry tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/app_registry.py'
+      - 'tools/test_app_registry.py'
+      - '.github/workflows/app-registry-tests.yml'
+  pull_request:
+    paths:
+      - 'tools/app_registry.py'
+      - 'tools/test_app_registry.py'
+      - '.github/workflows/app-registry-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  app-registry:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run app registry tests
+        env:
+          PYTHONPATH: tools
+        run: python -m unittest tools/test_app_registry.py -v
