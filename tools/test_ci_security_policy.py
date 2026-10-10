@@ -48,7 +48,6 @@ class BrokerCIPolicyTests(unittest.TestCase):
 
         for attribute in (
             "allowBackup",
-            "debuggable",
             "hasCode",
             "usesCleartextTraffic",
         ):
@@ -56,6 +55,13 @@ class BrokerCIPolicyTests(unittest.TestCase):
                 manifest,
                 rf'android:{attribute}="false"',
             )
+
+        # Android defaults debuggable to false; explicit false fails Lint.
+        # Reject explicit true and rely on compiled-manifest verification.
+        self.assertNotRegex(
+            manifest,
+            r'android:debuggable\\s*=\\s*"true"',
+        )
 
         self.assertNotRegex(
             manifest,
