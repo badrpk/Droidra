@@ -64,13 +64,13 @@ def verify_manifest(text, *, strict=False):
 
     element_pattern = re.compile(
         r"^( *)(?:E:)\s*"
-        r"([A-Za-z][A-Za-z0-9_-]*)(?:\s|$)"
+        r"([A-Za-z][A-Za-z0-9_-]*)(?: \(line=[0-9]+\))?\s*$"
     )
 
     typed_attribute = re.compile(
         r"^( *)(?:A:)\s*"
         r"([A-Za-z][A-Za-z0-9_:.-]*)"
-        r"\([^)]*\)=\(type 0x([0-9a-fA-F]+)\)"
+        r"(?:\(0x[0-9a-fA-F]+\))?=\(type 0x([0-9a-fA-F]+)\)"
         r"(0x[0-9a-fA-F]+)\s*$"
     )
 
