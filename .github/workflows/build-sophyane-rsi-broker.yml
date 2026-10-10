@@ -64,6 +64,39 @@ jobs:
           set -euo pipefail
           gradle --no-daemon :app:assembleRelease
 
+      - name: Diagnose packaged DEX (read-only)
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release-unsigned.apk"
+          test -s "$APK"
+          python3 - "$APK" <<'PY'
+          import hashlib
+          import struct
+          import sys
+          import zipfile
+
+          apk = sys.argv[1]
+          with zipfile.ZipFile(apk) as z:
+              for entry in z.infolist():
+                  if not (entry.filename.startswith("classes") and entry.filename.endswith(".dex")):
+                      continue
+                  data = z.read(entry)
+                  print("DEX_NAME=", entry.filename)
+                  print("DEX_SIZE=", len(data))
+                  print("DEX_SHA256=", hashlib.sha256(data).hexdigest())
+                  print("DEX_MAGIC=", repr(data[:8]))
+                  if len(data) >= 112 and data[:4] == b"dex\\n":
+                      for name, offset in (
+                          ("string_ids", 56),
+                          ("type_ids", 64),
+                          ("proto_ids", 72),
+                          ("field_ids", 80),
+                          ("method_ids", 88),
+                          ("class_defs", 96),
+                      ):
+                          print("DEX_" + name.upper() + "_COUNT=", struct.unpack_from("<I", data, offset)[0])
+          PY
+
       - name: Inspect compiled APK
         run: |
           set -euo pipefail
