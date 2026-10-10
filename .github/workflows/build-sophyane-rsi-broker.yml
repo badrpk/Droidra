@@ -97,6 +97,54 @@ jobs:
                           print("DEX_" + name.upper() + "_COUNT=", struct.unpack_from("<I", data, offset)[0])
           PY
 
+      - name: Trace DEX class origin (read-only)
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release-unsigned.apk"
+          python3 - "$APK" <<'PY'
+          import struct
+          import sys
+          import zipfile
+          from pathlib import Path
+
+          def inspect(data, label):
+              if len(data) < 112 or data[:4] != bytes((100, 101, 120, 10)):
+                  return
+              string_count, string_offset = struct.unpack_from("<II", data, 56)
+              type_count, type_offset = struct.unpack_from("<II", data, 64)
+              class_count, class_offset = struct.unpack_from("<II", data, 96)
+              def read_uleb(pos):
+                  value = 0
+                  for shift in range(0, 35, 7):
+                      b = data[pos]
+                      pos += 1
+                      value |= (b & 127) << shift
+                      if not b & 128:
+                          return pos
+                  raise ValueError("Invalid ULEB128")
+              strings = []
+              for i in range(string_count):
+                  off = struct.unpack_from("<I", data, string_offset + 4*i)[0]
+                  pos = read_uleb(off)
+                  end = data.index(0, pos)
+                  strings.append(data[pos:end].decode("utf-8", errors="replace"))
+              types = [strings[struct.unpack_from("<I", data, type_offset + 4*i)[0]] for i in range(type_count)]
+              print("DEX_ORIGIN=", label)
+              print("DEX_ALL_STRINGS=", repr(strings))
+              for i in range(class_count):
+                  class_idx = struct.unpack_from("<I", data, class_offset + 32*i)[0]
+                  print("DEX_CLASS_DESCRIPTOR=", types[class_idx])
+
+          with zipfile.ZipFile(sys.argv[1]) as z:
+              for name in z.namelist():
+                  if name.endswith(".dex"):
+                      inspect(z.read(name), "APK:" + name)
+          root = Path("app/build/intermediates")
+          for p in sorted(root.rglob("*.dex")):
+              if p.is_file():
+                  inspect(p.read_bytes(), str(p))
+          PY
+
       - name: Inspect compiled APK
         run: |
           set -euo pipefail
