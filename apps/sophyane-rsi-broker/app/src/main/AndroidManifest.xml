@@ -3,7 +3,6 @@
 
     <application
         android:allowBackup="false"
-        android:debuggable="false"
         android:hasCode="false"
         
         
