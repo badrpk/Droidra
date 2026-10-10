@@ -82,7 +82,15 @@ class DurableReference:
                 stream.flush()
                 os.fsync(stream.fileno())
             if create_only:
-                os.link(temporary, self.file)
+                # O_EXCL prevents overwriting existing replay history on Termux,
+                # where Python may not expose os.link(). A crash before writing
+                # leaves an invalid state that load() rejects (fail closed).
+                flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+                initial_fd = os.open(self.file, flags, 0o600)
+                with os.fdopen(initial_fd, "wb") as initial:
+                    initial.write(payload)
+                    initial.flush()
+                    os.fsync(initial.fileno())
             else:
                 os.replace(temporary, self.file)
             fd = os.open(self.directory, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
