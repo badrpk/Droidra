@@ -1,6 +1,7 @@
 """Offline single-process crash-consistency reference; not a security boundary."""
 import json
 import os
+import stat
 import tempfile
 from dataclasses import asdict
 from pathlib import Path
@@ -62,10 +63,25 @@ class DurableReference:
             raise PolicyDenied("Already provisioned")
         self._write(Model(), create_only=True)
 
+    def _identity(self):
+        try:
+            info = self.file.lstat()
+        except OSError as exc:
+            raise PolicyDenied("State unavailable") from exc
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise PolicyDenied("Unsafe state file")
+        return (info.st_dev, info.st_ino)
+
     def load(self):
         try:
+            before = self._identity()
             with self.file.open("rb") as stream:
+                opened = os.fstat(stream.fileno())
+                if (opened.st_dev, opened.st_ino) != before:
+                    raise PolicyDenied("State changed during open")
                 data = stream.read(8*1024*1024+1)
+            if self._identity() != before:
+                raise PolicyDenied("State replaced during read")
             if len(data) > 8*1024*1024:
                 raise PolicyDenied("Oversized state")
             return decode(json.loads(data.decode("utf-8")))
@@ -104,7 +120,10 @@ class DurableReference:
                 except FileNotFoundError: pass
 
     def transition(self, request, session, **kwargs):
+        identity = self._identity()
         before = self.load()
         after, receipt = apply(before, request, session, **kwargs)
+        if self._identity() != identity:
+            raise PolicyDenied("State replaced before commit")
         self._write(after)
         return receipt
