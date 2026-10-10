@@ -1,4 +1,4 @@
-"""Adversarial offline filesystem probes. Some tests document current gaps.
+"""Adversarial offline filesystem probes. Regression tests for previously observed filesystem gaps.
 
 No production filesystem or APK is touched. Each test uses a temporary tree.
 """
@@ -35,10 +35,8 @@ class AdversarialFilesystemTests(unittest.TestCase):
             self.store.transition(req(), SESSION)
         self.assertEqual(outside.read_text(), "sentinel")
 
-    @unittest.expectedFailure
     def test_state_symlink_denied_before_transition(self):
-        # Current reference follows state.json symlinks. A future fix must
-        # deny this without modifying the symlink target.
+        # A state symlink must be rejected before processing.
         outside = self.root / "outside-state"
         outside.write_bytes(self.store.file.read_bytes())
         self.store.file.unlink()
@@ -46,9 +44,8 @@ class AdversarialFilesystemTests(unittest.TestCase):
         with self.assertRaises(PolicyDenied):
             self.store.transition(req(), SESSION)
 
-    @unittest.expectedFailure
     def test_lock_inode_replacement_denied(self):
-        # Current reference does not recheck the locked inode's pathname.
+        # Recheck locked inode identity after acquiring flock.
         replacement = self.root / "replacement-lock"
         replacement.write_bytes(b"")
         original = os.stat(self.store.lockfile).st_ino
@@ -61,9 +58,8 @@ class AdversarialFilesystemTests(unittest.TestCase):
                 self.store.transition(req(), SESSION)
         self.assertNotEqual(original, os.stat(self.store.lockfile).st_ino)
 
-    @unittest.expectedFailure
     def test_state_inode_swap_during_validation_denied(self):
-        # A state path swap during load is not currently detected.
+        # Detect a state pathname swap between stat and open.
         outside = self.root / "replacement-state"
         outside.write_bytes(self.store.file.read_bytes())
         original_open = Path.open
