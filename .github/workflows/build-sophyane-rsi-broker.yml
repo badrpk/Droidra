@@ -85,7 +85,7 @@ jobs:
                   print("DEX_SIZE=", len(data))
                   print("DEX_SHA256=", hashlib.sha256(data).hexdigest())
                   print("DEX_MAGIC=", repr(data[:8]))
-                  if len(data) >= 112 and data[:4] == b"dex\\n":
+                  if len(data) >= 112 and data[:4] == bytes((100, 101, 120, 10)):
                       for name, offset in (
                           ("string_ids", 56),
                           ("type_ids", 64),
