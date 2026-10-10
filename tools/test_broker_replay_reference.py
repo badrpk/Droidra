@@ -3,6 +3,8 @@ import concurrent.futures
 import sqlite3
 import tempfile
 import unittest
+import gc
+import warnings
 from pathlib import Path
 from dataclasses import replace
 from broker_protocol_reference import PolicyDenied
@@ -19,6 +21,17 @@ class ReplayStoreTests(unittest.TestCase):
 
     def consume(self, challenge=CHALLENGE, caller=CALLER, request=REQUEST, now=100):
         return self.store.consume(POLICY, caller, challenge, request=request, now=now)
+
+    def test_connections_closed_without_resource_warnings(self):
+        with warnings.catch_warnings(record=True) as captured:
+            warnings.simplefilter("always", ResourceWarning)
+            self.consume()
+            with self.assertRaises(PolicyDenied):
+                self.consume()
+            gc.collect()
+        leaked = [w for w in captured if issubclass(w.category, ResourceWarning)
+                  and "unclosed database" in str(w.message)]
+        self.assertEqual(leaked, [])
 
     def test_first_consumption(self):
         self.assertTrue(self.consume())
