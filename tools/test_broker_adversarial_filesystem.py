@@ -62,14 +62,14 @@ class AdversarialFilesystemTests(unittest.TestCase):
         # Detect a state pathname swap between stat and open.
         outside = self.root / "replacement-state"
         outside.write_bytes(self.store.file.read_bytes())
-        original_open = Path.open
+        original_open = os.open
         swapped = [False]
         def intercept(path, *args, **kwargs):
-            if Path(path) == self.store.file and not swapped[0]:
+            if path == "state.json" and not swapped[0]:
                 swapped[0] = True
                 os.replace(outside, self.store.file)
             return original_open(path, *args, **kwargs)
-        with patch("pathlib.Path.open", intercept):
+        with patch("broker_locked_reference.os.open", side_effect=intercept):
             with self.assertRaises(PolicyDenied):
                 self.store.transition(req(), SESSION)
 
