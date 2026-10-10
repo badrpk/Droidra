@@ -5,6 +5,7 @@ import tempfile
 import unittest
 import gc
 import warnings
+from contextlib import closing
 from pathlib import Path
 from dataclasses import replace
 from broker_protocol_reference import PolicyDenied
@@ -23,6 +24,7 @@ class ReplayStoreTests(unittest.TestCase):
         return self.store.consume(POLICY, caller, challenge, request=request, now=now)
 
     def test_connections_closed_without_resource_warnings(self):
+        gc.collect()  # Drain objects left by earlier tests before capturing warnings.
         with warnings.catch_warnings(record=True) as captured:
             warnings.simplefilter("always", ResourceWarning)
             self.consume()
@@ -84,7 +86,7 @@ class ReplayStoreTests(unittest.TestCase):
             self.consume()
 
     def test_corrupt_schema_denied(self):
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path)) as db:
             db.execute("DELETE FROM metadata")
         with self.assertRaises(PolicyDenied):
             self.consume()
