@@ -34,8 +34,14 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: Android SDK
-        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+      # GitHub ubuntu-latest already provides Android SDK command-line tools.
+      # Avoid setup-android v3 requesting the obsolete SDK package 'tools'.
+      - name: Verify Android SDK tools
+        run: |
+          set -euo pipefail
+          test -n "${ANDROID_HOME:-}"
+          command -v sdkmanager
+          sdkmanager --version
 
       - name: Install SDK 36
         run: |
