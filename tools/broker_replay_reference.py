@@ -5,6 +5,7 @@ Not Android IPC, OS identity attestation, anti-rollback storage, or a security
 boundary against a same-UID attacker modifying the database.
 """
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from broker_admission_reference import admit
 from broker_protocol_reference import PolicyDenied
@@ -16,7 +17,7 @@ class ReplayStore:
     def initialize(self):
         if not self.path.parent.is_dir():
             raise PolicyDenied("Missing replay directory")
-        with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
+        with closing(sqlite3.connect(self.path, timeout=10, isolation_level=None)) as db:
             db.execute("PRAGMA journal_mode=DELETE")
             db.execute("PRAGMA synchronous=FULL")
             db.execute("CREATE TABLE IF NOT EXISTS consumed (value TEXT PRIMARY KEY NOT NULL)")
