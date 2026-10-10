@@ -14,6 +14,14 @@ android {
         versionName = "0.1.0"
     }
 
+    buildTypes {
+        getByName("release") {
+            // Remove generated classes unused by this code-free broker.
+            // The compiled APK must still pass the strict no-DEX verifier.
+            isMinifyEnabled = true
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
