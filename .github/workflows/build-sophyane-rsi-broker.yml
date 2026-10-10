@@ -170,6 +170,10 @@ jobs:
             exit 1
           fi
 
+          echo "BROKER_MANIFEST_XMLTREE_BEGIN"
+          cat apk-manifest.txt
+          echo "BROKER_MANIFEST_XMLTREE_END"
+
           python3 ../../tools/verify_broker_apk.py --unsigned-inspection "$APK" "$AAPT"
 
           sha256sum "$APK" > broker-release-unsigned.apk.sha256
