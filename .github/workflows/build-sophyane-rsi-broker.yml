@@ -7,6 +7,8 @@ on:
       - experiment/sophyane-rsi-broker
     paths:
       - .github/workflows/build-sophyane-rsi-broker.yml
+      - apps/sophyane-rsi-broker/**
+      - tools/verify_broker_apk.py
 
 permissions:
   contents: read
