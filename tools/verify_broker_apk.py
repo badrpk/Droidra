@@ -19,7 +19,6 @@ FORBIDDEN_COMPONENTS = {
 
 REQUIRED_FALSE = {
     "allowBackup",
-    "debuggable",
     "hasCode",
     "usesCleartextTraffic",
 }
@@ -98,6 +97,7 @@ def verify_manifest(text, *, strict=False):
         "android:debuggable": "0101000f",
         "android:hasCode": "0101000c",
         "android:usesCleartextTraffic": "010104ec",
+        "android:extractNativeLibs": "010104ea",
     }
     application_attributes = {}
 
@@ -169,6 +169,28 @@ def verify_manifest(text, *, strict=False):
             package_count += 1
             continue
 
+        if stack and stack[-1][1] == "manifest":
+            match = re.fullmatch(
+                r'^( *)A: (android:versionName|android:compileSdkVersionCodename)'
+                r'\\(0x([0-9a-fA-F]+)\\)="([^"]+)" \\(Raw: "([^"]+)"\\)\\s*',
+                raw_line,
+            )
+            if match:
+                expected = {
+                    "android:versionName": ("0101021c", "0.1.0"),
+                    "android:compileSdkVersionCodename": ("01010573", "16"),
+                }[match.group(2)]
+                if (
+                    len(match.group(1)) <= stack[-1][0]
+                    or match.group(3).lower() != expected[0]
+                    or match.group(4) != expected[1]
+                    or match.group(5) != expected[1]
+                    or match.group(2) in stack[-1][2]
+                ):
+                    reject("Invalid manifest string metadata")
+                stack[-1][2].add(match.group(2))
+                continue
+
         attribute = typed_attribute.fullmatch(raw_line)
 
         if attribute:
@@ -181,10 +203,12 @@ def verify_manifest(text, *, strict=False):
                 r"\(0x([0-9a-fA-F]+)\)=",
                 raw_line,
             )
-            if resource_id_match is None:
+            if resource_id_match is None and name not in {
+                "platformBuildVersionCode", "platformBuildVersionName"
+            }:
                 reject("Missing attribute resource ID")
 
-            resource_id = resource_id_match.group(1).lower()
+            resource_id = resource_id_match.group(1).lower() if resource_id_match else None
 
             if not stack or indent <= stack[-1][0]:
                 reject("Attribute outside element")
@@ -199,6 +223,17 @@ def verify_manifest(text, *, strict=False):
 
             if name == "package":
                 reject("Unexpected typed package attribute")
+            if element_name == "manifest":
+                metadata = {
+                    "android:versionCode": ("0101021b", "10", 1),
+                    "android:compileSdkVersion": ("01010572", "10", 36),
+                    "platformBuildVersionCode": (None, "10", 36),
+                    "platformBuildVersionName": (None, "10", 16),
+                }
+                expected = metadata.get(name)
+                if expected is None or (resource_id, value_type, int(value, 16)) != expected:
+                    reject("Unexpected manifest build metadata")
+                continue
 
             expected_resource_id = security_resource_ids.get(name)
 
@@ -235,6 +270,7 @@ def verify_manifest(text, *, strict=False):
                     "android:debuggable",
                     "android:hasCode",
                     "android:usesCleartextTraffic",
+                    "android:extractNativeLibs",
                 }
 
                 if name not in allowed_application_attributes:
@@ -272,6 +308,11 @@ def verify_manifest(text, *, strict=False):
             "android:targetSdkVersion",
         }:
             reject("Missing required SDK version attribute")
+
+    if application_attributes.get("android:debuggable", ("12", "0x0")) != ("12", "0x0"):
+        reject("Debuggable enabled or invalid")
+    if application_attributes.get("android:extractNativeLibs", ("12", "0x0")) != ("12", "0x0"):
+        reject("Native library extraction enabled or invalid")
 
     for attribute in REQUIRED_FALSE:
         key = f"android:{attribute}"
