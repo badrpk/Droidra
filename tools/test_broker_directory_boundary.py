@@ -1,6 +1,6 @@
 """Phase 99 offline probes: directory identity and commit-window races.
 
-Expected failures are known gaps, not security acceptance. No production paths.
+All previously observed directory and commit-window gaps must reject. No production paths.
 """
 import os
 import tempfile
@@ -26,7 +26,6 @@ class DirectoryBoundaryTests(unittest.TestCase):
         self.store = LockedReference(self.directory)
         self.store.initialize()
 
-    @unittest.expectedFailure
     def test_directory_symlink_rejected(self):
         real = self.root / "real"
         os.rename(self.directory, real)
@@ -34,7 +33,6 @@ class DirectoryBoundaryTests(unittest.TestCase):
         with self.assertRaises(PolicyDenied):
             self.store.transition(request(), SESSION)
 
-    @unittest.expectedFailure
     def test_directory_swap_before_commit_rejected(self):
         original_write = self.store._write
         moved = self.root / "moved-broker"
@@ -50,7 +48,6 @@ class DirectoryBoundaryTests(unittest.TestCase):
             with self.assertRaises(PolicyDenied):
                 self.store.transition(request(), SESSION)
 
-    @unittest.expectedFailure
     def test_state_swap_after_last_check_rejected(self):
         original_write = self.store._write
         replacement = self.root / "replacement-state"
