@@ -36,17 +36,23 @@ jobs:
 
       # GitHub ubuntu-latest already provides Android SDK command-line tools.
       # Avoid setup-android v3 requesting the obsolete SDK package 'tools'.
-      - name: Verify Android SDK tools
+      - name: Locate Android SDK tools
         run: |
           set -euo pipefail
-          test -n "${ANDROID_HOME:-}"
-          command -v sdkmanager
-          sdkmanager --version
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          test -d "$SDK_ROOT"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -maxdepth 3 -type f -name sdkmanager -print -quit)"
+          test -n "$SDKMANAGER"
+          test -x "$SDKMANAGER"
+          echo "SDKMANAGER=$SDKMANAGER" >> "$GITHUB_ENV"
+          "$SDKMANAGER" --version
 
       - name: Install SDK 36
         run: |
           set -euo pipefail
-          sdkmanager --install \
+          "$SDKMANAGER" --install \
             "platform-tools" \
             "platforms;android-36" \
             "build-tools;36.0.0"
