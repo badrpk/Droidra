@@ -172,7 +172,7 @@ def verify_manifest(text, *, strict=False):
         if stack and stack[-1][1] == "manifest":
             match = re.fullmatch(
                 r'^( *)A: (android:versionName|android:compileSdkVersionCodename)'
-                r'\\(0x([0-9a-fA-F]+)\\)="([^"]+)" \\(Raw: "([^"]+)"\\)\\s*',
+                r'\(0x([0-9a-fA-F]+)\)="([^"]+)" \(Raw: "([^"]+)"\)\s*',
                 raw_line,
             )
             if match:
