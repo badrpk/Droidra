@@ -2,6 +2,11 @@ name: Build Sophyane RSI Broker
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - experiment/sophyane-rsi-broker
+    paths:
+      - .github/workflows/build-sophyane-rsi-broker.yml
 
 permissions:
   contents: read
