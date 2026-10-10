@@ -28,7 +28,7 @@ class ReplayStore:
         if not self.path.is_file():
             raise PolicyDenied("Replay store unavailable")
         try:
-            with sqlite3.connect(self.path, timeout=10, isolation_level=None) as db:
+            with closing(sqlite3.connect(self.path, timeout=10, isolation_level=None)) as db:
                 db.execute("PRAGMA busy_timeout=10000")
                 db.execute("BEGIN IMMEDIATE")
                 try:
