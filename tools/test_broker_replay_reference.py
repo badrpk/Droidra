@@ -86,17 +86,17 @@ class ReplayStoreTests(unittest.TestCase):
             self.consume()
 
     def test_corrupt_schema_denied(self):
-        with closing(sqlite3.connect(self.path)) as db:
+        with closing(sqlite3.connect(self.path, isolation_level=None)) as db:
             db.execute("DELETE FROM metadata")
         with self.assertRaises(PolicyDenied):
             self.consume()
 
     def test_insert_failure_rolls_back(self):
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path, isolation_level=None)) as db:
             db.execute("CREATE TRIGGER block_insert BEFORE INSERT ON consumed BEGIN SELECT RAISE(FAIL, 'blocked'); END")
         with self.assertRaises(PolicyDenied):
             self.consume()
-        with sqlite3.connect(self.path) as db:
+        with closing(sqlite3.connect(self.path, isolation_level=None)) as db:
             self.assertEqual(db.execute("SELECT COUNT(*) FROM consumed").fetchone()[0], 0)
 
 if __name__ == "__main__":
