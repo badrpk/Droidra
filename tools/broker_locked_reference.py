@@ -5,6 +5,7 @@ stable; never unlink lockfile. This model assumes a trusted private directory.
 """
 import fcntl
 import os
+import stat
 from contextlib import contextmanager
 from pathlib import Path
 from broker_protocol_reference import PolicyDenied
@@ -31,6 +32,12 @@ class LockedReference(DurableReference):
         try:
             try:
                 fcntl.flock(fd, fcntl.LOCK_EX)
+                opened = os.fstat(fd)
+                named = self.lockfile.lstat()
+                if (not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1
+                    or not stat.S_ISREG(named.st_mode)
+                    or (opened.st_dev, opened.st_ino) != (named.st_dev, named.st_ino)):
+                    raise PolicyDenied("Lock inode changed")
             except OSError as exc:
                 raise PolicyDenied("Lock unavailable") from exc
             yield
